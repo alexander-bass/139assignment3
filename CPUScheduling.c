@@ -36,18 +36,18 @@ void read_processes(char *filename, Process processes[], char *algorithm, int *t
     fclose(fp);
 }
 
-int write_output(char *algorithm, int schedule[][2], int schedule_size, float avg_waiting_time){
+int write_output(char *algorithm, int time_quantum, int schedule[][2], int schedule_size, float avg_waiting_time){
     FILE *fp = fopen("output.txt", "w");
     if (fp == NULL){
         perror("Error opening output file.");
         exit(1);
     }
 
-    fprintf(fp, "%s\n", algorithm);
+    fprintf(fp, "%s %d\n", algorithm, time_quantum);
     for(int i = 0; i < schedule_size; i++){
         fprintf(fp, "%d %d\n", schedule[i][0], schedule[i][1]);
     }
-    fprintf(fp, "%.2f\n", avg_waiting_time);
+    fprintf(fp, "AVG Waiting Time: %.2f\n", avg_waiting_time);
 
     fclose(fp);
 }
@@ -69,7 +69,8 @@ float calculate_avg_waiting_time(int waiting_time[], int num_processes){
 void round_robin(Process processes[], int num_processes, int time_quantum, int schedule[][2], int *schedule_size){
     int current_time = 0;
     int completed = 0;
-    int *queue = (int *)malloc(sizeof(int) * num_processes);
+    int queue_capacity = num_processes;
+    int *queue = (int *)malloc(sizeof(int) * queue_capacity);
     int front = 0, rear = -1;
 
     for(int i = 0; i < num_processes; i++){
@@ -83,10 +84,11 @@ void round_robin(Process processes[], int num_processes, int time_quantum, int s
             int current_process = queue[front++];
             int time_slice = 0;
 
-            while(time_slice < time_quantum && processes[current_process].remaining_time > 0){
-                schedule[(*schedule_size)][0] = current_time;
-                schedule[(*schedule_size)++][1] = processes[current_process].process_num;
+            schedule[(*schedule_size)][0] = current_time; 
+            schedule[(*schedule_size)++][1] = processes[current_process].process_num;
 
+            while(time_slice < time_quantum && processes[current_process].remaining_time > 0){
+                
                 processes[current_process].remaining_time--;
                 current_time++;
                 time_slice++;
@@ -98,7 +100,16 @@ void round_robin(Process processes[], int num_processes, int time_quantum, int s
                 }
             }
 
+
             if(processes[current_process].remaining_time > 0){
+                if(rear == queue_capacity - 1){
+                    queue_capacity *= 2;
+                    queue = realloc(queue, sizeof(int) * queue_capacity);
+                    if(queue == NULL){
+                        perror("Error reallocating memory for queue.");
+                        exit(1);
+                    }
+                }
                 queue[++rear] = current_process;
             }
             else completed++;
@@ -116,7 +127,7 @@ void round_robin(Process processes[], int num_processes, int time_quantum, int s
     free(queue);
 }
 
-void calculate_waiting_time_RR(Process processes[], int num_processes, int schedule[][2], int schedule_size, int waiting_time[]){
+void calculate_waiting_time_RR(Process processes[], int num_processes, int schedule[][2], int schedule_size, int waiting_time[], int time_quantum){
     int *completion_time = (int *)malloc(sizeof(int) * num_processes);
 
     for(int i = 0; i < num_processes; i++){
@@ -126,7 +137,7 @@ void calculate_waiting_time_RR(Process processes[], int num_processes, int sched
     for(int i = schedule_size - 1; i >= 0; i--){
         int process_num = schedule[i][1] - 1;
         if(completion_time[process_num] == 0){
-            completion_time[process_num] = schedule[i][0];
+            completion_time[process_num] = schedule[i][0] + time_quantum;
         }
     }
 
@@ -148,11 +159,10 @@ int main(){
     int waiting_time[MAX_PROCESSES];
     float avg_waiting_time;
 
-    read_processes("input1.txt", processes, algorithm, &time_quantum, &num_processes);
+    read_processes("input10.txt", processes, algorithm, &time_quantum, &num_processes);
     round_robin(processes, num_processes, time_quantum, schedule, &schedule_size);
-    //printf("%d\n", num_processes);
-    //calculate_waiting_time_RR(processes, num_processes, schedule, schedule_size, waiting_time);
-    //avg_waiting_time = calculate_avg_waiting_time(waiting_time, num_processes);
-    //write_output(algorithm, schedule, schedule_size, avg_waiting_time);
+    calculate_waiting_time_RR(processes, num_processes, schedule, schedule_size, waiting_time, time_quantum);
+    avg_waiting_time = calculate_avg_waiting_time(waiting_time, num_processes);
+    write_output(algorithm, time_quantum, schedule, schedule_size, avg_waiting_time);
     
 }
