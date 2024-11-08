@@ -29,8 +29,7 @@ void read_processes(char *filename, Process processes[], char *algorithm, int *t
     fscanf(fp, "%d", num_processes);
 
     for(int i = 0; i < *num_processes; i++){
-        fscanf(fp, "%d %d %d %d", &processes[i].process_num, &processes[i].arrival_time, 
-               &processes[i].burst_time, &processes[i].priority);
+        fscanf(fp, "%d %d %d %d", &processes[i].process_num, &processes[i].arrival_time, &processes[i].burst_time, &processes[i].priority);
         processes[i].remaining_time = processes[i].burst_time;
     }
 
@@ -321,15 +320,14 @@ void priority_with_preemption(Process processes[], int num_processes, int schedu
         for(int i = 0; i < num_processes; i++){
             if(processes[i].arrival_time == current_time){
                 if(current_process != -1 && processes[i].priority < processes[current_process].priority){
-                    printf("entered preempt block");
                     PQNode preempted_node = {current_process, processes[current_process].burst_time, processes[current_process].arrival_time, processes[current_process].priority, processes[current_process].process_num};
                     insert(pq, &pq_size, preempted_node);
+                    
                     schedule[(*schedule_size)][0] = current_time;
                     schedule[(*schedule_size)++][1] = processes[current_process].process_num;
                 }
                 PQNode new_node = {i, processes[i].burst_time, processes[i].arrival_time, processes[i].priority, processes[i].process_num};
                 insert(pq, &pq_size, new_node);
-                printf("process %d inserted", processes[i].process_num);
             }
         }
 
@@ -384,7 +382,7 @@ int main(){
     int waiting_time[MAX_PROCESSES];
     float avg_waiting_time;
 
-    read_processes("input6.txt", processes, algorithm, &time_quantum, &num_processes);
+    read_processes("input14.txt", processes, algorithm, &time_quantum, &num_processes);
 
     if(strcmp(algorithm, "RR") == 0){
         printf("Starting RR\n");
@@ -403,4 +401,5 @@ int main(){
     calculate_waiting_time(processes, num_processes, waiting_time);
     avg_waiting_time = calculate_avg_waiting_time(waiting_time, num_processes);
     write_output(algorithm, time_quantum, schedule, schedule_size, avg_waiting_time);
+
 }
