@@ -73,73 +73,62 @@ void swap(PQNode *a, PQNode *b){
     *b = temp;
 }
 
-void heapify_sjf(PQNode pq[], int n, int i){
+void heapify(PQNode pq[], int n, int i, char *key){
     int smallest = i;
     int left = 2 * i + 1;
     int right = 2 * i + 2;
 
-    if(left < n && pq[left].burst_time < pq[smallest].burst_time){
-        smallest = left;
-    }
-    if(right < n && pq[right].burst_time < pq[smallest].burst_time){
-        smallest = right;
-    }
-    if(left < n && pq[left].burst_time == pq[smallest].burst_time && pq[left].arrival_time < pq[smallest].arrival_time){
-        smallest = left;
-    }
-    if(right < n && pq[right].burst_time == pq[smallest].burst_time && pq[right].arrival_time < pq[smallest].arrival_time){
-        smallest = right;
-    }
-    if(left < n && pq[left].burst_time == pq[smallest].burst_time && pq[left].arrival_time == pq[smallest].arrival_time && pq[left].process_num < pq[smallest].process_num){
-        smallest = left;
-    }
-    if(right < n && pq[right].burst_time == pq[smallest].burst_time && pq[right].arrival_time == pq[smallest].arrival_time && pq[right].process_num < pq[smallest].process_num){
-        smallest = right;
-    }
-
-    if(smallest != i){
-        swap(&pq[i], &pq[smallest]);
-        heapify_sjf(pq, n, smallest);
-    }
-}
-
-void heapify_pr(PQNode pq[], int n, int i){
-    int smallest = i;
-    int left = 2 * i + 1;
-    int right = 2 * i + 2;
-
-    if(left < n && pq[left].priority < pq[smallest].priority){
-        smallest = left;
-    }
-    if(right < n && pq[right].priority < pq[smallest].priority){
-        smallest = right;
-    }
-    if(left < n && pq[left].priority == pq[smallest].priority && pq[left].process_num < pq[smallest].process_num){
-        smallest = left;
-    }
-    if(right < n && pq[right].priority == pq[smallest].priority && pq[right].process_num < pq[smallest].process_num){
-        smallest = right;
+    if(strcmp(key, "burst_time") == 0){
+        if(left < n && pq[left].burst_time < pq[smallest].burst_time){
+            smallest = left;
+        }
+        if(right < n && pq[right].burst_time < pq[smallest].burst_time){
+            smallest = right;
+        }
+        if(left < n && pq[left].burst_time == pq[smallest].burst_time && pq[left].arrival_time < pq[smallest].arrival_time){
+            smallest = left;
+        }
+        if(right < n && pq[right].burst_time == pq[smallest].burst_time && pq[right].arrival_time < pq[smallest].arrival_time){
+            smallest = right;
+        }
+        if(left < n && pq[left].burst_time == pq[smallest].burst_time && pq[left].arrival_time == pq[smallest].arrival_time && pq[left].process_num < pq[smallest].process_num){
+            smallest = left;
+        }
+        if(right < n && pq[right].burst_time == pq[smallest].burst_time && pq[right].arrival_time == pq[smallest].arrival_time && pq[right].process_num < pq[smallest].process_num){
+            smallest = right;
+        }
+    } else if(strcmp(key, "priority") == 0){
+        if (left < n && pq[left].priority < pq[smallest].priority) {
+            smallest = left;
+        }
+        if (right < n && pq[right].priority < pq[smallest].priority) {
+            smallest = right;
+        }
+        if (left < n && pq[left].priority == pq[smallest].priority && pq[left].burst_time < pq[smallest].burst_time) { 
+            smallest = left;
+        }
+        if (right < n && pq[right].priority == pq[smallest].priority && pq[right].burst_time < pq[smallest].burst_time) {
+            smallest = right;
+        }
+        if (left < n && pq[left].priority == pq[smallest].priority && pq[left].burst_time == pq[smallest].burst_time && pq[left].process_num < pq[smallest].process_num) {
+            smallest = left;
+        }
+        if (right < n && pq[right].priority == pq[smallest].priority && pq[right].burst_time == pq[smallest].burst_time && pq[right].process_num < pq[smallest].process_num) {
+            smallest = right;
+        }
     }
 
     if(smallest != i){
         swap(&pq[i], &pq[smallest]);
-        heapify_pr(pq, n, smallest);
+        heapify(pq, n, smallest, key);
     }
 }
 
-PQNode extract_min_sjf(PQNode pq[], int *n){
+PQNode extract_min(PQNode pq[], int *n, char *key){
     PQNode min = pq[0];
     pq[0] = pq[(*n) - 1];
     (*n)--;
-    heapify_sjf(pq, *n, 0);
-    return min;
-}
-
-PQNode extract_min_pr(PQNode pq[], int *n){
-    PQNode min = pq[0];
-    pq[0] = pq[(*n) - 1];
-    (*n)--;
-    heapify_pr(pq, *n, 0);
+    heapify(pq, *n, 0, key);
     return min;
 }
 
@@ -246,22 +235,22 @@ void shortest_job_first(Process processes[], int num_processes, int schedule[][2
 
     while(completed < num_processes){
         for(int i = 0; i < num_processes; i++){
-            if(processes[i].arrival_time <= current_time && processes[i].burst_time > 0){
+            if(processes[i].arrival_time <= current_time && processes[i].remaining_time > 0){
                 PQNode new_node = {i, processes[i].burst_time, processes[i].arrival_time, processes[i].priority, processes[i].process_num};
                 insert(pq, &pq_size, new_node);
                 
-                processes[i].burst_time = -processes[i].burst_time;
+                processes[i].remaining_time = 0;
             }
         }
 
         if(pq_size > 0){
-            PQNode current_node = extract_min_sjf(pq, &pq_size);
+            PQNode current_node = extract_min(pq, &pq_size, "burst_time");
             int current_process = current_node.process_index;
 
             schedule[(*schedule_size)][0] = current_time;
             schedule[(*schedule_size)++][1] = processes[current_process].process_num;
 
-            current_time += -processes[current_process].burst_time;
+            current_time += processes[current_process].burst_time;
 
             completed ++;
             processes[current_process].completion_time = current_time;
@@ -278,25 +267,35 @@ void priority_no_preemption(Process processes[], int num_processes, int schedule
     int completed = 0;
     PQNode pq[MAX_PROCESSES];
     int pq_size = 0;
+    int current_process = -1;
 
     while(completed < num_processes){
-        for(int i = 0; i < num_processes; i++){
-            if(processes[i].arrival_time <= current_time && processes[i].burst_time > 0){
-                PQNode new_node = {i, processes[i].burst_time, processes[i].arrival_time, processes[i].priority, processes[i].process_num};
-                insert(pq, &pq_size, new_node);
+        int highest_priority = 9999;
+        int next_process = -1;
 
-                processes[i].burst_time = -processes[i].burst_time;
+        for(int i = 0; i < num_processes; i++){
+            if(processes[i].arrival_time <= current_time && processes[i].remaining_time > 0 && processes[i].priority < highest_priority){
+                highest_priority = processes[i].priority;
+                next_process = i;
+            } else if(processes[i].arrival_time <= current_time && processes[i].remaining_time > 0 && processes[i].priority == highest_priority && processes[i].process_num < processes[next_process].process_num){
+                next_process = i;
             }
         }
 
+        if(next_process != -1){
+            PQNode new_node = {next_process, processes[next_process].burst_time, processes[next_process].arrival_time, processes[next_process].priority, processes[next_process].process_num};
+            insert(pq, &pq_size, new_node);
+            processes[next_process].remaining_time = 0;
+        }
+
         if(pq_size > 0){
-            PQNode current_node = extract_min_pr(pq, &pq_size);
+            PQNode current_node = extract_min(pq, &pq_size, "priority");
             int current_process = current_node.process_index;
 
             schedule[(*schedule_size)][0] = current_time;
             schedule[(*schedule_size)++][1] = processes[current_process].process_num;
 
-            current_time += -processes[current_process].burst_time;
+            current_time += processes[current_process].burst_time;
 
             completed ++;
             processes[current_process].completion_time = current_time;
@@ -304,7 +303,6 @@ void priority_no_preemption(Process processes[], int num_processes, int schedule
         else current_time++;
     }
 }
-
 /*******************************************************************************/
 
 //Priority with Preemption
@@ -318,47 +316,50 @@ void priority_with_preemption(Process processes[], int num_processes, int schedu
 
     while(completed < num_processes){
         for(int i = 0; i < num_processes; i++){
-            if(processes[i].arrival_time == current_time){
+            if(processes[i].arrival_time == current_time && processes[i].remaining_time > 0){
                 if(current_process != -1 && processes[i].priority < processes[current_process].priority){
-                    PQNode preempted_node = {current_process, processes[current_process].burst_time, processes[current_process].arrival_time, processes[current_process].priority, processes[current_process].process_num};
-                    insert(pq, &pq_size, preempted_node);
-                    
-                    schedule[(*schedule_size)][0] = current_time;
-                    schedule[(*schedule_size)++][1] = processes[current_process].process_num;
+                    schedule[(*schedule_size)][0] = current_time; 
+                    schedule[(*schedule_size)++][1] = processes[i].process_num;
+
+                    PQNode new_node = {current_process, processes[current_process].remaining_time, processes[current_process].arrival_time, processes[current_process].priority, processes[current_process].process_num};
+                    insert(pq, &pq_size, new_node);
+
+                    current_process = i;
+                } else {
+                    PQNode new_node = {i, processes[i].remaining_time, processes[i].arrival_time, processes[i].priority, processes[i].process_num};
+                    insert(pq, &pq_size, new_node);
                 }
-                PQNode new_node = {i, processes[i].burst_time, processes[i].arrival_time, processes[i].priority, processes[i].process_num};
-                insert(pq, &pq_size, new_node);
             }
         }
 
-        if(pq_size > 0){
-            PQNode current_node = extract_min_pr(pq, &pq_size);
+        if(current_process == -1 && pq_size > 0){
+            PQNode current_node = extract_min(pq, &pq_size, "priority");
             current_process = current_node.process_index;
 
             schedule[(*schedule_size)][0] = current_time;
             schedule[(*schedule_size)++][1] = processes[current_process].process_num;
-
-            processes[current_process].burst_time--;
-            current_time++;
-
-            if(processes[current_process].burst_time == 0){
-                completed ++;
-                processes[current_process].completion_time = current_time;
-                current_process = -1;
-            }
         }
-        else current_time++;
+
+        if(current_process != -1){
+            processes[current_process].remaining_time--;
+        }
+
+        if(current_process != -1 && processes[current_process].remaining_time == 0){
+            completed++;
+            processes[current_process].completion_time = current_time + 1;
+            current_process = -1;
+        }
+
+        current_time++;
     }
 }
-
-
 /*******************************************************************************/
 
 
 void calculate_waiting_time(Process processes[], int num_processes, int waiting_time[]){
     
     for(int i = 0; i < num_processes; i++){
-        waiting_time[i] = processes[i].completion_time - processes[i].arrival_time - (-processes[i].burst_time);
+        waiting_time[i] = processes[i].completion_time - processes[i].arrival_time - processes[i].burst_time;
     }
 }
 
@@ -382,19 +383,17 @@ int main(){
     int waiting_time[MAX_PROCESSES];
     float avg_waiting_time;
 
-    read_processes("input14.txt", processes, algorithm, &time_quantum, &num_processes);
+    // issues with input number: 6, 16
+
+    read_processes("input.txt", processes, algorithm, &time_quantum, &num_processes);
 
     if(strcmp(algorithm, "RR") == 0){
-        printf("Starting RR\n");
         round_robin(processes, num_processes, time_quantum, schedule, &schedule_size);
     } else if(strcmp(algorithm, "SJF") == 0){
-        printf("Starting SJF\n");
         shortest_job_first(processes, num_processes, schedule, &schedule_size);
     } else if(strcmp(algorithm, "PR_noPREMP") == 0){
-        printf("Starting PR_noPREMP\n");
         priority_no_preemption(processes, num_processes, schedule, &schedule_size);
     } else if(strcmp(algorithm, "PR_withPREMP") == 0){
-        printf("Starting PR_withPREMP\n");
         priority_with_preemption(processes, num_processes, schedule, &schedule_size);
     }
 
