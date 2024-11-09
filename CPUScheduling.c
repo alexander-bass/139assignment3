@@ -355,7 +355,8 @@ void priority_with_preemption(Process processes[], int num_processes, int schedu
 }
 /*******************************************************************************/
 
-
+//Calculate waiting time
+/*******************************************************************************/
 void calculate_waiting_time(Process processes[], int num_processes, int waiting_time[]){
     
     for(int i = 0; i < num_processes; i++){
@@ -372,6 +373,7 @@ float calculate_avg_waiting_time(int waiting_time[], int num_processes){
 
     return (float)total_waiting_time / num_processes;
 }
+/*******************************************************************************/
 
 int main(){
     Process processes[MAX_PROCESSES];
